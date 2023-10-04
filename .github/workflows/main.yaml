@@ -50,7 +50,7 @@ jobs:
       env:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-        SONAR_PROJECT_KEY: Demo # Replace with your project key
+        SONAR_PROJECT_KEY: sample # Replace with your project key
       run: |
         # Run SonarQube analysis
         $SONAR_SCANNER
