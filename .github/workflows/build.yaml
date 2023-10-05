@@ -11,7 +11,7 @@ on:
 
 jobs:
   build:
-    if: github.event.workflow_run.conclusion == 'success' && contains(github.event.workflow_run.workflow, 'SonarQube-Scan and Build JAR')
+    if: github.event.workflow_run.conclusion == 'success' && contains(github.event.workflow_run.workflows, 'SonarQube-Scan and Build JAR')
     runs-on: windows-latest
 
     steps:
