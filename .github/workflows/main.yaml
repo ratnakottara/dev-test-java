@@ -37,33 +37,35 @@ jobs:
         }
       shell: pwsh
 
-    - name: SonarQube Scan
+    - name: Download and Extract SonarScanner
       run: |
         # Download and unzip SonarScanner 5
-        curl -sSL "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.0.2966-windows.zip" -o sonar-scanner.zip
-        Expand-Archive -Path sonar-scanner.zip -DestinationPath .
+        $sonarScannerUrl = "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.0.2966-windows.zip"
+        $sonarScannerZip = Join-Path $env:USERPROFILE sonar-scanner.zip
+        Invoke-WebRequest -Uri $sonarScannerUrl -OutFile $sonarScannerZip
+        Expand-Archive -Path $sonarScannerZip -DestinationPath $env:USERPROFILE
+        Remove-Item -Path $sonarScannerZip
         # Configure SonarScanner properties (adjust as needed)
-        echo "sonar.host.url=${{ secrets.SONAR_HOST_URL }}" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
-        echo "sonar.login=${{ secrets.SONAR_TOKEN }}" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
-        echo "sonar.projectKey=sample" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
+        echo "sonar.host.url=${{ secrets.SONAR_HOST_URL }}" >> "$env:USERPROFILE\sonar-scanner-5.0.0.2966-windows\conf\sonar-scanner.properties"
+        echo "sonar.login=${{ secrets.SONAR_TOKEN }}" >> "$env:USERPROFILE\sonar-scanner-5.0.0.2966-windows\conf\sonar-scanner.properties"
+        echo "sonar.projectKey=sample" >> "$env:USERPROFILE\sonar-scanner-5.0.0.2966-windows\conf\sonar-scanner.properties"
+      shell: pwsh
+
+    - name: SonarQube Scan
+      run: |
         # Run SonarScanner
-        sonar-scanner-5.0.0.2966-windows/bin/sonar-scanner.bat
+        $sonarScannerDir = "$env:USERPROFILE\sonar-scanner-5.0.0.2966-windows"
+        & "$sonarScannerDir\bin\sonar-scanner.bat"
+      shell: pwsh
+
     - name: Change to repository root
       run: cd $GITHUB_WORKSPACE
 
-    - name: Compile Java code and create JAR
-      run: |
-         # Compile your Java code
-         javac HelloWorld.java
-         # Create a JAR file
-         jar cfe HelloWorld.jar HelloWorld HelloWorld.class
     - name: Save JAR as Artifact
       uses: actions/upload-artifact@v2
       with:
         name: HelloWorld-JAR  # Name of the artifact
         path: HelloWorld.jar  # Path to the JAR file
-
-    # Add this step to create a completion artifact
     - name: Set Workflow Completion Flag
       run: echo "Workflow completed" > workflow-completed.flag
       working-directory: ${{ github.workspace }}
