@@ -64,8 +64,6 @@ jobs:
         path: HelloWorld.jar  # Path to the JAR file
 
     # Add this step to create a completion artifact
-    - name: Create Workflow Completion Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: workflow-completed
-        path: .  # You can specify any path or an empty file as needed
+    - name: Set Workflow Completion Flag
+      run: echo "Workflow completed" > workflow-completed.flag
+      working-directory: ${{ github.workspace }}
