@@ -53,9 +53,8 @@ jobs:
       - name: Save JAR as Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: HelloWorld-JAR  # Name of the artifact
-          path: HelloWorld.jar  # Path to the JAR file
-
+         name: HelloWorld-JAR  # Name of the artifact
+         path: HelloWorld.jar
   build:
     name: Build and Push Docker Image
     needs: sonarqube
