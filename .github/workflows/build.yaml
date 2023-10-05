@@ -15,6 +15,13 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      - name: Debug Info
+        run: |
+          echo "Event: ${{ toJson(github.event) }}"
+          echo "Workflow Run Conclusion: ${{ github.event.workflow_run.conclusion }}"
+          echo "Workflow Run Workflow: ${{ github.event.workflow_run.workflow }}"
+        # Rest of your steps...
+      
       - name: Checkout
         uses: actions/checkout@v2
 
