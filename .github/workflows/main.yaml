@@ -1,7 +1,6 @@
-name: SonarQube-Scan and Build JAR
+name: SonarQube-Scan, Build Docker, and Push to ECR
 
 on:
-  # Trigger analysis when pushing to the main branch.
   push:
     branches:
       - dev
@@ -12,60 +11,90 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        ref: dev
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: dev
 
-    - name: Set up Java
-      uses: actions/setup-java@v2
-      with:
-        java-version: 17
-        distribution: 'adopt'
-        architecture: x64
-        check-latest: false
-        server-id: github
-        server-username: GITHUB_ACTOR
-        server-password: GITHUB_TOKEN
-        overwrite-settings: true
-        job-status: success
+      - name: Set up Java
+        uses: actions/setup-java@v2
+        with:
+          java-version: 17
+          distribution: 'adopt'
+          architecture: x64
+          check-latest: false
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: GITHUB_TOKEN
+          overwrite-settings: true
+          job-status: success
 
-    - name: Delete SonarQube cache
-      run: |
-        if (Test-Path $HOME\.sonar) {
-          Remove-Item -Path $HOME\.sonar -Force -Recurse
-        }
-      shell: pwsh
+      - name: Delete SonarQube cache
+        run: |
+          if (Test-Path $HOME\.sonar) {
+            Remove-Item -Path $HOME\.sonar -Force -Recurse
+          }
+        shell: pwsh
 
-    - name: Download and Extract SonarScanner
-      run: |
-        # Download and unzip SonarScanner 5
-        $sonarScannerUrl = "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.0.2966-windows.zip"
-        $sonarScannerZip = Join-Path $env:USERPROFILE sonar-scanner.zip
-        Invoke-WebRequest -Uri $sonarScannerUrl -OutFile $sonarScannerZip
-        Expand-Archive -Path $sonarScannerZip -DestinationPath $env:USERPROFILE
-        Remove-Item -Path $sonarScannerZip
-        # Configure SonarScanner properties (adjust as needed)
-        echo "sonar.host.url=${{ secrets.SONAR_HOST_URL }}" >> "$env:USERPROFILE\sonar-scanner-5.0.0.2966-windows\conf\sonar-scanner.properties"
-        echo "sonar.login=${{ secrets.SONAR_TOKEN }}" >> "$env:USERPROFILE\sonar-scanner-5.0.0.2966-windows\conf\sonar-scanner.properties"
-        echo "sonar.projectKey=sample" >> "$env:USERPROFILE\sonar-scanner-5.0.0.2966-windows\conf\sonar-scanner.properties"
-      shell: pwsh
+      - name: SonarQube Scan
+        run: |
+          # Download and unzip SonarScanner 5
+          curl -sSL "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.0.2966-windows.zip" -o sonar-scanner.zip
+          Expand-Archive -Path sonar-scanner.zip -DestinationPath .
+          # Configure SonarScanner properties (adjust as needed)
+          echo "sonar.host.url=${{ secrets.SONAR_HOST_URL }}" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
+          echo "sonar.login=${{ secrets.SONAR_TOKEN }}" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
+          echo "sonar.projectKey=sample" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
+          # Run SonarScanner
+          sonar-scanner-5.0.0.2966-windows/bin/sonar-scanner.bat
+      - name: Change to repository root
+        run: cd $GITHUB_WORKSPACE
 
-    - name: SonarQube Scan
-      run: |
-        # Run SonarScanner
-        $sonarScannerDir = "$env:USERPROFILE\sonar-scanner-5.0.0.2966-windows"
-        & "$sonarScannerDir\bin\sonar-scanner.bat"
-      shell: pwsh
+      - name: Save JAR as Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: HelloWorld-JAR  # Name of the artifact
+          path: HelloWorld.jar  # Path to the JAR file
 
-    - name: Change to repository root
-      run: cd $GITHUB_WORKSPACE
+  build:
+    name: Build and Push Docker Image
+    needs: sonarqube
+    runs-on: windows-latest
 
-    - name: Save JAR as Artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: HelloWorld-JAR  # Name of the artifact
-        path: HelloWorld.jar  # Path to the JAR file
-    - name: Set Workflow Completion Flag
-      run: echo "Workflow completed" > workflow-completed.flag
-      working-directory: ${{ github.workspace }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Download JAR Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: HelloWorld-JAR  # Name of the artifact
+          path: .  # Destination path in the workspace
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 390067525135.dkr.ecr.ap-south-1.amazonaws.com
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+
+      - name: Build Docker image
+        run: docker build -t my-java-app .
+
+      - name: Push Docker image to ECR
+        run: |
+          docker tag my-java-app:latest 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+          docker push 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+      - name: Sign Docker image with Cosign
+        run: |
+          docker pull 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+          cosign sign -key cosign.key 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+      - name: Save JAR as Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: HelloWorld-JAR
+          path: HelloWorld.jar
