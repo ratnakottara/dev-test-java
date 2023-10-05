@@ -23,6 +23,9 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t my-java-app .
+
+      # Rest of your steps (push, sign, and save artifact)
+
       - name: Push Docker image to ECR
         run: |
           docker tag my-java-app:latest 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
