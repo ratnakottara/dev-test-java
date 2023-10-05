@@ -1,10 +1,6 @@
 name: Build and Push Docker Image
 
 on:
-  workflow_run:
-    workflows: ["SonarQube-Scan and Build JAR"]
-    types:
-      - completed
   push:
     branches:
       - dev
@@ -12,17 +8,44 @@ on:
 jobs:
   build:
     runs-on: windows-latest
-    if: github.event.workflow_run.conclusion == 'success' && contains(github.event.workflow_run.workflow, 'SonarQube-Scan and Build JAR')
 
     steps:
-      - name: Debug Info
-        run: |
-          echo "Event: ${{ toJson(github.event) }}"
-          echo "Workflow Run Conclusion: ${{ github.event.workflow_run.conclusion }}"
-          echo "Workflow Run Workflow: ${{ github.event.workflow_run.workflow }}"
-        # Rest of your steps...
       
       - name: Checkout
         uses: actions/checkout@v2
 
-      # Rest of your steps...
+      - name: Download JAR Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: HelloWorld-JAR  # Name of the artifact
+          path: .  # Destination path in the workspace
+
+      - name: Login to ECR
+        run: |
+          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 390067525135.dkr.ecr.ap-south-1.amazonaws.com
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ap-south-1
+
+      - name: Build Docker image
+        run: docker build -t my-java-app .
+
+      # Rest of your steps (push, sign, and save artifact)
+
+      - name: Push Docker image to ECR
+        run: |
+          docker tag my-java-app:latest 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+          docker push 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+      - name: Sign Docker image with Cosign
+        run: |
+          docker pull 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+          cosign sign -key cosign.key 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+        env:
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+
+      - name: Save JAR as Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: HelloWorld-JAR
+          path: HelloWorld.jar
