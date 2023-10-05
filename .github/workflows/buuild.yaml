@@ -15,23 +15,22 @@ jobs:
 
       - name: Login to ECR
         run: |
-          aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/m0b1q7n4
+          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 390067525135.dkr.ecr.ap-south-1.amazonaws.com
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: us-east-1
+          AWS_DEFAULT_REGION: ap-south-1
 
       - name: Build Docker image
         run: docker build -t my-java-app .
-
       - name: Push Docker image to ECR
         run: |
-          docker tag my-java-app:latest public.ecr.aws/m0b1q7n4/my-java-app:latest
-          docker push public.ecr.aws/m0b1q7n4/my-java-app:latest
+          docker tag my-java-app:latest 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+          docker push 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
       - name: Sign Docker image with Cosign
         run: |
-          docker pull public.ecr.aws/m0b1q7n4/my-java-app:latest
-          cosign sign -key cosign.key public.ecr.aws/m0b1q7n4/my-java-app:latest
+          docker pull 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+          cosign sign -key cosign.key 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
         env:
           COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
 
