@@ -6,21 +6,10 @@ on:
       - dev
 
 jobs:
-  dummy:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix-dummy: ${{ steps.set-matrix.outputs.dummy }}
-    steps:
-      - name: Set matrix
-        id: set-matrix
-        run: echo "::set-output name=dummy::true"
 
   sonarqube:
     name: SonarQube Trigger
     runs-on: windows-latest
-
-    needs: dummy  # Wait for the dummy job to complete
-
     steps:
       - name: Checkout
         uses: actions/checkout@v2
