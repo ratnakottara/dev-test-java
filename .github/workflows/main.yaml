@@ -50,6 +50,13 @@ jobs:
       - name: Change to repository root
         run: cd $GITHUB_WORKSPACE
 
+      - name: Compile Java code and create JAR
+        run: |
+         # Compile your Java code
+         javac HelloWorld.java
+         # Create a JAR file
+         jar cfe HelloWorld.jar HelloWorld HelloWorld.class
+
       - name: Save JAR as Artifact
         uses: actions/upload-artifact@v2
         with:
