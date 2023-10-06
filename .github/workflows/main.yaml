@@ -48,7 +48,7 @@ jobs:
       - name: Change to repository root
         run: cd $GITHUB_WORKSPACE
 
-      - name: Compile Java code and create JAR File
+      - name: Compile Java code and create JAR 
         run: |
           javac HelloWorld.java
           jar cfe HelloWorld.jar HelloWorld HelloWorld.class
