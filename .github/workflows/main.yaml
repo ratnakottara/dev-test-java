@@ -54,17 +54,15 @@ jobs:
 
       - name: Compile Java code and create JAR
         run: |
-         # Compile your Java code
-         javac HelloWorld.java
-         # Create a JAR file
-         jar cfe HelloWorld.jar HelloWorld HelloWorld.class
-
-
+          # Compile your Java code
+          javac HelloWorld.java
+          # Create a JAR file
+          jar cfe HelloWorld.jar HelloWorld HelloWorld.class
       - name: Save JAR as Artifact
         uses: actions/upload-artifact@v2
         with:
-         name: HelloWorld-JAR  # Name of the artifact
-         path: HelloWorld.jar
+          name: HelloWorld-JAR  # Name of the artifact
+          path: HelloWorld.jar
 
   build:
     name: Build and Push Docker Image
@@ -75,6 +73,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
+      - name: Update and Upgrade
+        run: |
+          sudo apt-get update
+          sudo apt-get -y upgrade
+
+      - name: Remove conflicting packages
+        run: |
+          sudo apt-get remove -y containerd.io
+
+      - name: Install Docker
+        run: |
+          sudo apt-get install -y docker.io
+          sudo systemctl start docker
+          sudo systemctl enable docker
+
+      - name: Check Docker Version
+        run: docker --version
+
       - name: Download JAR Artifact
         uses: actions/download-artifact@v2
         with:
@@ -82,13 +98,9 @@ jobs:
           path: .  # Destination path in the workspace
 
       - name: Set up Docker
-        run: |
-         echo "Installing Docker..."
-         sudo apt-get update
-         sudo apt-get -y install docker.io
-         sudo systemctl start docker
-         sudo systemctl enable docker
-         docker --version
+        uses: actions/setup-docker@v2
+        with:
+          docker-version: '20.10.0'  # You can specify your desired Docker version
 
       - name: Build Docker image
         run: docker build -t my-java-app .
