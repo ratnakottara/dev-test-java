@@ -54,10 +54,11 @@ jobs:
 
       - name: Compile Java code and create JAR
         run: |
-         # Compile your Java code (adjust this step according to your project structure)
-         javac src/HelloWorld.java
+         # Compile your Java code
+         javac HelloWorld.java
          # Create a JAR file
-         jar cfe HelloWorld.jar HelloWorld -C src HelloWorld.class
+         jar cfe HelloWorld.jar HelloWorld HelloWorld.class
+
 
       - name: Save JAR as Artifact
         uses: actions/upload-artifact@v2
