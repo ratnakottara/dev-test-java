@@ -83,6 +83,9 @@ jobs:
           sudo systemctl start docker
           sudo systemctl enable docker
 
+      - name: Verify AWS CLI
+        run: aws --version
+
       - name: Check Docker Version
         run: docker --version
 
