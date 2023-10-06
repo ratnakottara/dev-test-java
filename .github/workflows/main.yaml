@@ -129,4 +129,4 @@ jobs:
           ARTIFACTORY_URL="https://hyndavi.jfrog.io/ui/admin/repositories/local/my-java-repo/"
 
           curl -uapikey:${ARTIFACTORY_API_KEY} \
-          -T HelloWorld.jar "${ARTIFACTORY_URL}/HelloWorld.jar"
+          -T HelloWorld.jar "${ARTIFACTORY_URL}/."
