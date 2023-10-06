@@ -8,7 +8,7 @@ on:
 jobs:
   sonarqube:
     name: SonarQube Trigger
-    runs-on: windows-latest
+    runs-on: ubuntu-latest  # Use Ubuntu runner
 
     steps:
       - name: Checkout
@@ -31,22 +31,22 @@ jobs:
 
       - name: Delete SonarQube cache
         run: |
-          if (Test-Path $HOME\.sonar) {
-            Remove-Item -Path $HOME\.sonar -Force -Recurse
+          if (Test-Path $HOME/.sonar) {
+            Remove-Item -Path $HOME/.sonar -Force -Recurse
           }
-        shell: pwsh
 
       - name: SonarQube Scan
         run: |
           # Download and unzip SonarScanner 5
           curl -sSL "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.0.2966-windows.zip" -o sonar-scanner.zip
-          Expand-Archive -Path sonar-scanner.zip -DestinationPath .
+          unzip sonar-scanner.zip
           # Configure SonarScanner properties (adjust as needed)
           echo "sonar.host.url=${{ secrets.SONAR_HOST_URL }}" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
           echo "sonar.login=${{ secrets.SONAR_TOKEN }}" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
           echo "sonar.projectKey=sample" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
           # Run SonarScanner
           sonar-scanner-5.0.0.2966-windows/bin/sonar-scanner.bat
+
       - name: Change to repository root
         run: cd $GITHUB_WORKSPACE
 
@@ -62,10 +62,11 @@ jobs:
         with:
          name: HelloWorld-JAR  # Name of the artifact
          path: HelloWorld.jar
+
   build:
     name: Build and Push Docker Image
     needs: sonarqube
-    runs-on: windows-latest
+    runs-on: ubuntu-latest  # Use Ubuntu runner
 
     steps:
       - name: Checkout
@@ -77,13 +78,10 @@ jobs:
           name: HelloWorld-JAR  # Name of the artifact
           path: .  # Destination path in the workspace
 
-      - name: Login to ECR
-        run: |
-          aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 390067525135.dkr.ecr.ap-south-1.amazonaws.com
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: ap-south-1
+      - name: Set up Docker
+        uses: actions/setup-docker@v2
+        with:
+          docker-version: '20.10.0'  # You can specify your desired Docker version
 
       - name: Build Docker image
         run: docker build -t my-java-app .
@@ -92,6 +90,7 @@ jobs:
         run: |
           docker tag my-java-app:latest 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
           docker push 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+
       - name: Sign Docker image with Cosign
         run: |
           docker pull 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
