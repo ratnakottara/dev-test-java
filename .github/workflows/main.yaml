@@ -104,8 +104,8 @@ jobs:
           aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 390067525135.dkr.ecr.ap-south-1.amazonaws.com
       - name: Push Docker image to ECR
         run: |
-          docker tag my-java-app:latest 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
-          docker push 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+          docker tag my-java-app:latest 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:v1
+          docker push 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:v1
       - name: Install Cosign
         run: |
          # Install Cosign
@@ -115,14 +115,10 @@ jobs:
          
       - name: Sign Docker image with Cosign
         run: |
-         docker pull 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+         docker pull 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:v1
          echo "$COSIGN_KEY" > cosign.key
-         cosign sign --key cosign.key 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+         cosign sign --key cosign.key 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:v1
         env:
          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-      - name: Save JAR as Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: HelloWorld-JAR
-          path: HelloWorld.jar
+      
