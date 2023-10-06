@@ -19,15 +19,14 @@ jobs:
       - name: Set up Java
         uses: actions/setup-java@v2
         with:
-          java-version: 17
+          java-version: '17'  # Ensure Java version is in single quotes
           distribution: 'adopt'
-          architecture: x64
-          check-latest: false
-          server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: GITHUB_TOKEN
+          architecture: 'x64'
+          server-id: 'github'
+          server-username: ${{ github.actor }}
+          server-password: ${{ secrets.GITHUB_TOKEN }}
           overwrite-settings: true
-          job-status: success
+          job-status: 'success'
 
       - name: Delete SonarQube cache
         run: |
@@ -37,25 +36,28 @@ jobs:
 
       - name: SonarQube Scan
         run: |
-          # Download and unzip SonarScanner 5
-          curl -sSL "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.0.2966-windows.zip" -o sonar-scanner.zip
+          # Download and unzip SonarScanner 5 for Linux
+          curl -sSL "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.0.2966-linux.zip" -o sonar-scanner.zip
           unzip sonar-scanner.zip
           # Configure SonarScanner properties (adjust as needed)
-          echo "sonar.host.url=${{ secrets.SONAR_HOST_URL }}" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
-          echo "sonar.login=${{ secrets.SONAR_TOKEN }}" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
-          echo "sonar.projectKey=sample" >> sonar-scanner-5.0.0.2966-windows/conf/sonar-scanner.properties
+          echo "sonar.host.url=${{ secrets.SONAR_HOST_URL }}" >> sonar-scanner-5.0.0.2966-linux/conf/sonar-scanner.properties
+          echo "sonar.login=${{ secrets.SONAR_TOKEN }}" >> sonar-scanner-5.0.0.2966-linux/conf/sonar-scanner.properties
+          echo "sonar.projectKey=sample" >> sonar-scanner-5.0.0.2966-linux/conf/sonar-scanner.properties
           # Run SonarScanner
-          sonar-scanner-5.0.0.2966-windows/bin/sonar-scanner.bat
+          ./sonar-scanner-5.0.0.2966-linux/bin/sonar-scanner
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: Change to repository root
         run: cd $GITHUB_WORKSPACE
 
       - name: Compile Java code and create JAR
         run: |
-         # Compile your Java code
-         javac HelloWorld.java
+         # Compile your Java code (adjust this step according to your project structure)
+         javac src/HelloWorld.java
          # Create a JAR file
-         jar cfe HelloWorld.jar HelloWorld HelloWorld.class
+         jar cfe HelloWorld.jar HelloWorld -C src HelloWorld.class
 
       - name: Save JAR as Artifact
         uses: actions/upload-artifact@v2
