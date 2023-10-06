@@ -31,9 +31,9 @@ jobs:
 
       - name: Delete SonarQube cache
         run: |
-          if (Test-Path $HOME/.sonar) {
-            Remove-Item -Path $HOME/.sonar -Force -Recurse
-          }
+          if [ -d $HOME/.sonar ]; then
+            rm -rf $HOME/.sonar
+          fi
 
       - name: SonarQube Scan
         run: |
