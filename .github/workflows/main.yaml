@@ -115,11 +115,12 @@ jobs:
          
       - name: Sign Docker image with Cosign
         run: |
-          docker pull 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
-          cosign sign -key cosign.key 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+         docker pull 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
+         echo "$COSIGN_KEY" > cosign.key
+         cosign sign --key cosign.key 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:latest
         env:
-          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
-
+         COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
+         COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
       - name: Save JAR as Artifact
         uses: actions/upload-artifact@v2
         with:
