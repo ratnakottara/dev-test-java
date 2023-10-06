@@ -82,9 +82,13 @@ jobs:
           path: .  # Destination path in the workspace
 
       - name: Set up Docker
-        uses: actions/setup-docker@v2
-        with:
-          docker-version: '20.10.0'  # You can specify your desired Docker version
+        run: |
+         echo "Installing Docker..."
+         sudo apt-get update
+         sudo apt-get -y install docker.io
+         sudo systemctl start docker
+         sudo systemctl enable docker
+         docker --version
 
       - name: Build Docker image
         run: docker build -t my-java-app .
