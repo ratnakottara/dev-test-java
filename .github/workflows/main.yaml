@@ -122,13 +122,12 @@ jobs:
          COSIGN_KEY: ${{ secrets.COSIGN_KEY }}
          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
 
-
       - name: Upload JAR to Artifactory
-        run: |
-          ARTIFACTORY_API_KEY="${{ secrets.ARTIFACTORY_API_KEY }}"
-          ARTIFACTORY_URL="https://hyndavi.jfrog.io/artifactory/my-java-repo"
+        env:
+          ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
+          ARTIFACTORY_URL: "https://hyndavi.jfrog.io/artifactory/my-java-repo"
           ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
           ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-
+        run: |
           curl -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_PASSWORD}" -H "X-JFrog-Art-Api:${ARTIFACTORY_API_KEY}" -T HelloWorld.jar "${ARTIFACTORY_URL}/HelloWorld.jar"
 
