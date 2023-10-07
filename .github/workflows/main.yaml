@@ -125,8 +125,6 @@ jobs:
       - name: Upload JAR to Artifactory
         env:
           ARTIFACTORY_URL: "https://hyndavi.jfrog.io/ui/admin/repositories/local/my-java-repo/edit"
-          ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
-          ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+          ARTIFACTORY_API_KEY: ${{ secrets.ARTIFACTORY_API_KEY }}
         run: |
-          curl -u "${ARTIFACTORY_USERNAME}:${ARTIFACTORY_PASSWORD}" -T HelloWorld.jar "${ARTIFACTORY_URL}/HelloWorld.jar"
-
+          curl -H "X-JFrog-Art-Api:${ARTIFACTORY_API_KEY}" -T HelloWorld.jar "${ARTIFACTORY_URL}/"
