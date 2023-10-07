@@ -1,4 +1,4 @@
-name: SonarQube-Scan, Build Docker, and Push to ECR
+name: SonarQube Scan, Build Docker, and Push to ECR
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
 
 jobs:
   sonarqube:
-    name: SonarQube-Trigger
+    name: SonarQube Scan
     runs-on: ubuntu-latest
 
     steps:
@@ -21,37 +21,37 @@ jobs:
         with:
           java-version: '17'
           distribution: 'adopt'
-          architecture: 'x64'
           server-id: 'github'
           server-username: ${{ github.actor }}
           server-password: ${{ secrets.GITHUB_TOKEN }}
           overwrite-settings: true
-          job-status: 'success'
 
       - name: Delete SonarQube cache
         run: |
           if [ -d $HOME/.sonar ]; then
             rm -rf $HOME/.sonar
           fi
-      - name: SonarQube Scan
+
+      - name: Download SonarScanner
         run: |
           curl -sSL "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-5.0.0.2966-linux.zip" -o sonar-scanner.zip
-          unzip sonar-scanner.zip
-          echo "sonar.host.url=${{ secrets.SONAR_HOST_URL }}" >> sonar-scanner-5.0.0.2966-linux/conf/sonar-scanner.properties
-          echo "sonar.login=${{ secrets.SONAR_TOKEN }}" >> sonar-scanner-5.0.0.2966-linux/conf/sonar-scanner.properties
-          echo "sonar.projectKey=sample" >> sonar-scanner-5.0.0.2966-linux/conf/sonar-scanner.properties
-          ./sonar-scanner-5.0.0.2966-linux/bin/sonar-scanner
-        env:
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          unzip sonar-scanner.zip -d sonar-scanner
+
+      - name: SonarQube Scan
+        run: |
+          echo "sonar.host.url=${{ secrets.SONAR_HOST_URL }}" >> sonar-scanner/sonar-scanner-5.0.0.2966-linux/conf/sonar-scanner.properties
+          echo "sonar.login=${{ secrets.SONAR_TOKEN }}" >> sonar-scanner/sonar-scanner-5.0.0.2966-linux/conf/sonar-scanner.properties
+          echo "sonar.projectKey=sample" >> sonar-scanner/sonar-scanner-5.0.0.2966-linux/conf/sonar-scanner.properties
+          ./sonar-scanner/sonar-scanner-5.0.0.2966-linux/bin/sonar-scanner
 
       - name: Change to repository root
         run: cd $GITHUB_WORKSPACE
 
-      - name: Compile Java code and create JAR 
+      - name: Compile Java code and create JAR
         run: |
           javac HelloWorld.java
           jar cfe HelloWorld.jar HelloWorld HelloWorld.class
+
       - name: Save JAR as Artifact
         uses: actions/upload-artifact@v2
         with:
@@ -71,14 +71,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get -y upgrade
+
       - name: Remove conflicting packages
         run: |
           sudo apt-get remove -y containerd.io
+
       - name: Install Docker
         run: |
           sudo apt-get install -y docker.io
           sudo systemctl start docker
           sudo systemctl enable docker
+
       - name: Verify AWS CLI
         run: aws --version
 
@@ -102,10 +105,12 @@ jobs:
           aws configure set aws_access_key_id ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws configure set aws_secret_access_key ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 390067525135.dkr.ecr.ap-south-1.amazonaws.com
+
       - name: Push Docker image to ECR
         run: |
           docker tag my-java-app:latest 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:v1
           docker push 390067525135.dkr.ecr.ap-south-1.amazonaws.com/my-java-app:v1
+
       - name: Install Cosign
         run: |
          # Install Cosign
